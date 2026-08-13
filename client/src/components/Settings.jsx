@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { api, downloadCSV, uploadResume } from '../api.js';
 
 export default function Settings({ user, setUser, refresh }) {
@@ -6,18 +6,21 @@ export default function Settings({ user, setUser, refresh }) {
   const [newSkill, setNewSkill] = useState('');
   const [msg, setMsg] = useState('');
   const [busy, setBusy] = useState(false);
-  const [file, setFile] = useState(null);
   const [resMsg, setResMsg] = useState(null);
   const [resErr, setResErr] = useState(null);
   const [resBusy, setResBusy] = useState(false);
+  const [fileName, setFileName] = useState(null);
+  const [dragging, setDragging] = useState(false);
+  const fileRef = useRef(null);
 
-  async function handleResumeUpload() {
-    if (!file) return;
+  async function runExtract(f) {
+    if (!f) return;
+    setFileName(f.name);
     setResBusy(true);
     setResMsg(null);
     setResErr(null);
     try {
-      const r = await uploadResume(file);
+      const r = await uploadResume(f);
       setSkills(r.skills);
       setUser({ ...user, skills: r.skills });
       const via = r.source === 'ai' ? 'AI' : 'keyword matching';
@@ -26,12 +29,28 @@ export default function Settings({ user, setUser, refresh }) {
         : 'no new skills needed — everything was already tracked';
       setResMsg(`Parsed ${r.chars.toLocaleString()} characters from your ${r.kind.toUpperCase()}. ` +
         `${r.foundCount} skill(s) found via ${via} — ${addedTxt}.`);
-      setFile(null);
     } catch (err) {
       setResErr(err.message);
     } finally {
       setResBusy(false);
     }
+  }
+
+  function pickFile() {
+    if (!resBusy) fileRef.current?.click();
+  }
+
+  function onFileSelected(e) {
+    const f = e.target.files?.[0] || null;
+    e.target.value = '';
+    if (f) runExtract(f);
+  }
+
+  function onDrop(e) {
+    e.preventDefault();
+    setDragging(false);
+    const f = e.dataTransfer.files?.[0] || null;
+    if (f) runExtract(f);
   }
 
   async function saveSkills() {
@@ -69,27 +88,20 @@ export default function Settings({ user, setUser, refresh }) {
           Upload your resume and AI will read it and add the skills it finds automatically.
           You can still add and remove skills manually below.
         </p>
-        <div className="export-row">
-          <div>
-            <b style={{ fontSize: '.9rem' }}>Resume file</b>
-            <p style={{ color: 'var(--muted)', fontSize: '.8rem', marginTop: '.15rem' }}>
-              PDF, DOCX or TXT (max 3&nbsp;MB). Without an AI API key, a keyword matcher is used instead.
-            </p>
-            <input
-              type="file"
-              accept=".pdf,.docx,.txt"
-              disabled={resBusy}
-              onChange={e => {
-                setFile(e.target.files[0] || null);
-                setResMsg(null);
-                setResErr(null);
-              }}
-              style={{ maxWidth: 340 }}
-            />
-          </div>
-          <button className="btn-grad" onClick={handleResumeUpload} disabled={resBusy || !file}>
-            {resBusy ? 'Analyzing…' : 'Extract skills'}
-          </button>
+        <div
+          className={'dropzone' + (dragging ? ' dragover' : '')}
+          onClick={pickFile}
+          onDragEnter={e => { e.preventDefault(); setDragging(true); }}
+          onDragOver={e => e.preventDefault()}
+          onDragLeave={() => setDragging(false)}
+          onDrop={onDrop}
+        >
+          <div className="dz-icon">⬆</div>
+          <b>
+            {resBusy ? 'Analyzing your resume…' : fileName ? `Ready: ${fileName}` : 'Drop your resume here or click to browse'}
+          </b>
+          <p>PDF, DOCX or TXT — up to 3 MB. Skills are extracted automatically when you drop or pick a file.</p>
+          <input ref={fileRef} type="file" accept=".pdf,.docx,.txt" onChange={onFileSelected} hidden />
         </div>
         {resMsg && <p style={{ marginTop: '.8rem', fontSize: '.84rem', color: 'var(--green)' }}>{resMsg}</p>}
         {resErr && <p style={{ marginTop: '.8rem', fontSize: '.84rem', color: 'var(--red)' }}>{resErr}</p>}
