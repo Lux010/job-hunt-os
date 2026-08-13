@@ -53,6 +53,7 @@ export default function App() {
   }
 
   function onAuth(tokenVal, userVal) {
+    setToken(tokenVal);
     setTokenState(tokenVal);
     setUser(userVal);
   }
