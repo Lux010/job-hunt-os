@@ -51,6 +51,28 @@ npm start       # builds + serves client and API from one Express server
 
 The API serves on `PORT` (default 5000) and the SPA from the same origin, so there is no CORS setup and a single process to deploy (Render, Railway, Fly, a VM, etc.).
 
+> **Note:** the in-memory fallback is for local demos only. If `MONGODB_URI` is set in production (`NODE_ENV=production`), the server fails hard instead of silently falling back to an ephemeral database.
+
+## Deploy to Render
+
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/Lux010/job-hunt-os)
+
+1. Click the button and sign in to Render with GitHub (free).
+2. When prompted, set **`MONGODB_URI`** to your MongoDB Atlas connection string.
+3. Render auto-generates `JWT_SECRET`, builds the client, and starts the server.
+
+`render.yaml` is the deploy blueprint: build runs `npm install` + client build; the start command serves the SPA and API from one process; `/api/health` is the health check.
+
+### MongoDB Atlas (free)
+
+1. Sign up at https://www.mongodb.com/cloud/atlas/register2 and create a **free (M0) cluster** — pick a region near your host (e.g. `us-east-1`).
+2. **Database Access** → Add new database user (e.g. `jobhunt`) with a password.
+3. **Network Access** → Add IP address → **Allow access from anywhere** (`0.0.0.0/0`) so Render can reach it.
+4. **Database** → Connect → Drivers → copy the connection string (`mongodb+srv://...`) and replace `<password>` with the user's password.
+5. Paste it as `MONGODB_URI` in the Render deploy step above.
+
+> Your data lives on Atlas; deployments and restarts never wipe it.
+
 ## Configuration (`.env`)
 
 Copy `.env.example` to `.env` and adjust:

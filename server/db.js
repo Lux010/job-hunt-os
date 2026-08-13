@@ -14,9 +14,13 @@ export async function connectDB() {
   const uri = process.env.MONGODB_URI;
   if (uri) {
     try {
-      await mongoose.connect(uri, { serverSelectionTimeoutMS: 5000 });
+      await mongoose.connect(uri, { serverSelectionTimeoutMS: 8000 });
       console.log('[db] connected to MongoDB');
     } catch (err) {
+      if (process.env.NODE_ENV === 'production') {
+        console.error('[db] Failed to connect to MONGODB_URI in production:', err.message);
+        throw err;
+      }
       console.warn('[db] MONGODB_URI unreachable, falling back to in-memory MongoDB.');
       console.warn('     ' + err.message);
       await connectMemory();
