@@ -9,6 +9,7 @@ Built to be one simple deploy: the React client is built and served by the same 
 - **Kanban board** — drag cards between Applied / Interviewing / Offer / Rejected; search; inline add/edit/delete
 - **Insights** — pipeline funnel, response & interview rates, average days in pipeline, and a "needs follow-up" list (Applied > 7 days)
 - **Fit Checker** — paste any job description and get a 0–100 fit score against your skills, with matched strengths and missing keywords. Uses AI (OpenAI-compatible API) when configured, with a dependency-free keyword matcher as fallback
+- **Resume → AI skills** — upload your resume (PDF / DOCX / TXT) and AI reads it and auto-adds the skills it finds. Manual skill editing always stays available; without an API key a keyword matcher is used
 - **Follow-up reminders** — a daily cron digests stale applications; emails them via SMTP when configured, otherwise logs to the console
 - **CSV export** — download every application as `job-hunt-os.csv`
 - **Single-user auth** — email + password, JWT session
@@ -21,6 +22,8 @@ Built to be one simple deploy: the React client is built and served by the same 
 | Backend | Node.js + Express 5 |
 | Database | MongoDB via Mongoose |
 | Auth | JSON Web Tokens (jsonwebtoken + bcryptjs) |
+| File upload | multer (in-memory) |
+| Resume parsing | pdf-parse (PDF), mammoth (DOCX) |
 | Jobs | node-cron + nodemailer |
 | Fit scoring | fetch against OpenAI-compatible chat endpoint, keyword fallback |
 
@@ -77,9 +80,9 @@ job-hunt-os/
 │   ├── index.js         Express app, serves client/dist in production
 │   ├── db.js            Mongo connect with in-memory fallback
 │   ├── models/          User, Job
-│   ├── routes/          auth, user, jobs, stats, score, csv
+│   ├── routes/          auth, user, jobs, stats, score, csv, resume
 │   ├── middleware/      JWT auth
-│   └── services/        fit.js (AI/keyword scoring), reminders.js (cron + email)
+│   └── services/        fit.js (AI/keyword scoring), reminders.js (cron + email), resume.js (PDF/DOCX/TXT text), skillExtract.js (AI/keyword skills)
 └── .env.example
 ```
 

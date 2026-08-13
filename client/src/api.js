@@ -18,6 +18,20 @@ export async function api(path, { method = 'GET', body } = {}) {
   return data;
 }
 
+export async function uploadResume(file) {
+  const token = getToken();
+  const fd = new FormData();
+  fd.append('resume', file);
+  const res = await fetch('/api/resume/upload', {
+    method: 'POST',
+    headers: token ? { Authorization: 'Bearer ' + token } : {},
+    body: fd
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.error || 'Upload failed');
+  return data;
+}
+
 export function downloadCSV() {
   const token = getToken();
   fetch('/api/csv/export.csv', {

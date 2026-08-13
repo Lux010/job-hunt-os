@@ -1,11 +1,38 @@
 import React, { useState } from 'react';
-import { api, downloadCSV } from '../api.js';
+import { api, downloadCSV, uploadResume } from '../api.js';
 
 export default function Settings({ user, setUser, refresh }) {
   const [skills, setSkills] = useState(user.skills || []);
   const [newSkill, setNewSkill] = useState('');
   const [msg, setMsg] = useState('');
   const [busy, setBusy] = useState(false);
+  const [file, setFile] = useState(null);
+  const [resMsg, setResMsg] = useState(null);
+  const [resErr, setResErr] = useState(null);
+  const [resBusy, setResBusy] = useState(false);
+
+  async function handleResumeUpload() {
+    if (!file) return;
+    setResBusy(true);
+    setResMsg(null);
+    setResErr(null);
+    try {
+      const r = await uploadResume(file);
+      setSkills(r.skills);
+      setUser({ ...user, skills: r.skills });
+      const via = r.source === 'ai' ? 'AI' : 'keyword matching';
+      const addedTxt = r.added.length
+        ? `${r.added.length} skill(s) added (${r.added.join(', ')})`
+        : 'no new skills needed — everything was already tracked';
+      setResMsg(`Parsed ${r.chars.toLocaleString()} characters from your ${r.kind.toUpperCase()}. ` +
+        `${r.foundCount} skill(s) found via ${via} — ${addedTxt}.`);
+      setFile(null);
+    } catch (err) {
+      setResErr(err.message);
+    } finally {
+      setResBusy(false);
+    }
+  }
 
   async function saveSkills() {
     setBusy(true);
@@ -34,7 +61,39 @@ export default function Settings({ user, setUser, refresh }) {
 
   return (
     <div>
-      <h2 className="section-title">Settings <span>— skills, data &amp; reminders</span></h2>
+      <h2 className="section-title">Settings <span>— skills, resume &amp; data</span></h2>
+
+      <div className="panel">
+        <h3>Resume &amp; AI skills</h3>
+        <p style={{ color: 'var(--muted)', fontSize: '.84rem', marginBottom: '.9rem' }}>
+          Upload your resume and AI will read it and add the skills it finds automatically.
+          You can still add and remove skills manually below.
+        </p>
+        <div className="export-row">
+          <div>
+            <b style={{ fontSize: '.9rem' }}>Resume file</b>
+            <p style={{ color: 'var(--muted)', fontSize: '.8rem', marginTop: '.15rem' }}>
+              PDF, DOCX or TXT (max 3&nbsp;MB). Without an AI API key, a keyword matcher is used instead.
+            </p>
+            <input
+              type="file"
+              accept=".pdf,.docx,.txt"
+              disabled={resBusy}
+              onChange={e => {
+                setFile(e.target.files[0] || null);
+                setResMsg(null);
+                setResErr(null);
+              }}
+              style={{ maxWidth: 340 }}
+            />
+          </div>
+          <button className="btn-grad" onClick={handleResumeUpload} disabled={resBusy || !file}>
+            {resBusy ? 'Analyzing…' : 'Extract skills'}
+          </button>
+        </div>
+        {resMsg && <p style={{ marginTop: '.8rem', fontSize: '.84rem', color: 'var(--green)' }}>{resMsg}</p>}
+        {resErr && <p style={{ marginTop: '.8rem', fontSize: '.84rem', color: 'var(--red)' }}>{resErr}</p>}
+      </div>
 
       <div className="panel">
         <h3>Your skills</h3>

@@ -12,6 +12,7 @@ import jobRoutes from './routes/jobs.js';
 import statRoutes from './routes/stats.js';
 import scoreRoutes from './routes/score.js';
 import csvRoutes from './routes/csv.js';
+import resumeRoutes from './routes/resume.js';
 import { startReminders } from './services/reminders.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -28,6 +29,7 @@ app.use('/api/jobs', jobRoutes);
 app.use('/api/stats', statRoutes);
 app.use('/api/score', scoreRoutes);
 app.use('/api/csv', csvRoutes);
+app.use('/api/resume', resumeRoutes);
 
 const clientDist = path.join(__dirname, '..', 'client', 'dist');
 if (process.env.NODE_ENV === 'production' && existsSync(clientDist)) {
